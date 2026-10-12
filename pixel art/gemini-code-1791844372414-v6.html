@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Studio Pro</title>
+    <style>
+        * {
+            box-sizing: border-box; /* Impede que elementos vazem do container */
+        }
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #10b981;
+            --input-bg: #0f172a;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            .container { grid-template-columns: 1fr 1fr; }
+        }
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            overflow: hidden; /* Garante que nada saia dos limites */
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        h1 { font-size: 1.3rem; margin: 0; color: #f8fafc; }
+        h2 { font-size: 1rem; color: #38bdf8; margin-top: 0; margin-bottom: 10px; }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        label { font-size: 0.85em; color: #94a3b8; font-weight: 600; }
+
+        /* Estilização corrigida para as Barrinhas (Sliders) sem vazar */
+        .slider-group {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #0f172a;
+            outline: none;
+            border: 1px solid #475569;
+            margin: 4px 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #818cf8;
+        }
+
+        select { 
+            width: 100%; padding: 10px; border-radius: 6px; background: var(--input-bg); color: white; border: 1px solid #475569; 
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-camera { background: #0ea5e9; }
+        .btn-success { background: #22c55e; }
+        
+        /* Botão Sutil de Dicas */
+        .btn-icon-subtle {
+            background: transparent;
+            border: 1px solid #475569;
+            color: #fbbf24;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-icon-subtle:hover {
+            background: rgba(251, 191, 36, 0.1);
+            border-color: #fbbf24;
+        }
+
+        #canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #090d16;
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            min-height: 280px;
+            padding: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        canvas {
+            image-rendering: pixelated;
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        video {
+            width: 100%;
+            border-radius: 8px;
+            display: none;
+            max-height: 250px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        /* Modal Sutil e Leve */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: var(--card);
+            padding: 20px 25px;
+            border-radius: 12px;
+            max-width: 480px;
+            width: 90%;
+            border: 1px solid #475569;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .close-btn {
+            position: absolute; top: 12px; right: 16px;
+            font-size: 1.3rem; color: #94a3b8; cursor: pointer;
+        }
+        .close-btn:hover { color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- COLUNA ESQUERDA: CONTROLES DE PROCESSAMENTO -->
+        <div class="card">
+            <div class="header-title">
+                <h1>🎨 Pixel Art Studio</h1>
+                <button class="btn-icon-subtle" onclick="openModal()">💡 Dicas</button>
+            </div>
+            
+            <h2>1. Origem da Imagem</h2>
+            <div class="controls">
+                <button onclick="document.getElementById('file-input').click()">📁 Escolher da Galeria</button>
+                <input type="file" id="file-input" accept="image/*" style="display: none;">
+                
+                <button class="btn-camera" onclick="toggleCamera()">📸 Câmera do Celular</button>
+            </div>
+
+            <video id="webcam" autoplay playsinline></video>
+            <button id="btn-snap" class="btn-success" style="display: none; margin-bottom: 15px;" onclick="takeSnapshot()">✨ Tirar Foto Agora</button>
+
+            <h2>2. Ajustes de Estilo</h2>
+            <div class="controls">
+                <label>Modo de Conversão:</label>
+                <select id="conversion-mode" onchange="processImage()">
+                    <option value="photo">Modo Retrato / Foto / Objeto (Mantém Cores e Sombras)</option>
+                    <option value="sketch">Modo Rascunho em Papel (Remove Fundo Branco)</option>
+                </select>
+
+                <div class="slider-group">
+                    <label>Resolução Pixelada: <span id="val-size">32x32</span></label>
+                    <input type="range" id="pixel-size" min="16" max="64" step="8" value="32" oninput="processImage()">
+                </div>
+
+                <div class="slider-group">
+                    <label>Nível de Cores Sólidas: <span id="val-colors">12 níveis</span></label>
+                    <input type="range" id="color-levels" min="4" max="16" step="2" value="12" oninput="processImage()">
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA: PREVIEW E BOTÃO DE DOWNLOAD -->
+        <div class="card">
+            <h2>Resultado</h2>
+            <div id="canvas-container">
+                <canvas id="pixel-canvas"></canvas>
+            </div>
+
+            <button class="btn-success" onclick="downloadPixelArt()" style="width: 100%; padding: 14px; font-size: 1rem;">💾 Baixar Asset PNG</button>
+        </div>
+    </div>
+
+    <!-- JANELA SUTIL DE DICAS (MODAL) -->
+    <div id="tips-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 style="color: #fbbf24; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                💡 Guia Rápido de Fotos
+            </h3>
+            <div style="font-size: 0.9rem; line-height: 1.5; color: #cbd5e1;">
+                <ul style="padding-left: 18px; margin: 10px 0 0 0;">
+                    <li style="margin-bottom: 8px;"><strong>Iluminação:</strong> Luz natural indireta evita sombras duras no papel/objeto.</li>
+                    <li style="margin-bottom: 8px;"><strong>Alinhamento:</strong> Mantenha o celular reto e paralelo à superfície (90°).</li>
+                    <li style="margin-bottom: 8px;"><strong>Modo Retrato:</strong> Ideal para fotos coloridas, plantas e rostos.</li>
+                    <li><strong>Modo Rascunho:</strong> Para desenhos feitos à mão com caneta escura em folha branca.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pixel-canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const webcam = document.getElementById('webcam');
+        const btnSnap = document.getElementById('btn-snap');
+        let currentImage = null;
+        let stream = null;
+
+        function openModal() { document.getElementById('tips-modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('tips-modal').style.display = 'none'; }
+        window.onclick = function(event) {
+            const modal = document.getElementById('tips-modal');
+            if (event.target == modal) closeModal();
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () =>
