@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Studio - Conversor de Assets</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #10b981;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 { color: #fff; margin-top: 0; }
+        .tips-box {
+            background: #334155;
+            border-left: 4px solid var(--accent);
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        label { font-size: 0.85em; color: #94a3b8; }
+        input[type="range"], input[type="file"] { width: 100%; }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-camera { background: var(--accent); }
+        #canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #090d16;
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            min-height: 250px;
+            padding: 10px;
+        }
+        canvas {
+            image-rendering: pixelated;
+            max-width: 100%;
+            height: auto;
+        }
+        video {
+            width: 100%;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align: center;">🎨 Pixel Art Asset Generator</h1>
+
+    <div class="container">
+        <!-- PAINEL DE CONTROLES E CÂMERA -->
+        <div class="card">
+            <h2>1. Origem da Imagem</h2>
+            
+            <div class="controls">
+                <button onclick="document.getElementById('file-input').click()">📁 Carregar Foto / Anexo</button>
+                <input type="file" id="file-input" accept="image/*" style="display: none;">
+                
+                <button class="btn-camera" id="btn-webcam" onclick="toggleCamera()">📸 Usar Câmera / Celular</button>
+            </div>
+
+            <video id="webcam" autoplay playsinline></video>
+            <button id="btn-snap" style="display: none; margin-top: 10px;" onclick="takeSnapshot()">📷 Capturar Foto</button>
+
+            <h2>2. Ajustes de Pixel Art</h2>
+            <div class="controls">
+                <label>Tamanho do Pixel (Resolução): <span id="val-size">32x32</span></label>
+                <input type="range" id="pixel-size" min="16" max="128" step="16" value="32" oninput="processImage()">
+
+                <label>Paleta de Cores: <span id="val-colors">16 cores</span></label>
+                <input type="range" id="color-count" min="4" max="32" step="4" value="16" oninput="processImage()">
+            </div>
+
+            <button onclick="downloadPixelArt()" style="width: 100%; margin-top: 10px; background: #22c55e;">💾 Baixar PNG Pró-Asset</button>
+        </div>
+
+        <!-- PAINEL DE VISUALIZAÇÃO E DICAS -->
+        <div class="card">
+            <h2>Resultado</h2>
+            <div id="canvas-container">
+                <canvas id="pixel-canvas"></canvas>
+            </div>
+
+            <h3>💡 Dicas para Melhores Resultados</h3>
+            <div class="tips-box">
+                <ul>
+                    <li><strong>Alto Contraste:</strong> Desenhe no papel com caneta preta ou marcador bem escuro.</li>
+                    <li><strong>Iluminação Direta:</strong> Evite sombras do próprio celular sobre o papel ao tirar a foto.</li>
+                    <li><strong>Silhuetas Simples:</strong> Imagens com contornos claros e poucos detalhes internos viram pixel art perfeita instantaneamente.</li>
+                    <li><strong>Toque Final no Piskel:</strong> Baixe o PNG gerado aqui e abra no Piskel apenas para ajustar 2 ou 3 pixels de borda se necessário!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pixel-canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const webcam = document.getElementById('webcam');
+        const btnSnap = document.getElementById('btn-snap');
+        let currentImage = null;
+        let stream = null;
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        currentImage = img;
+                        stopCamera();
+                        processImage();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function toggleCamera() {
+            if (stream) {
+                stopCamera();
+            } else {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    webcam.srcObject = stream;
+                    webcam.style.display = 'block';
+                    btnSnap.style.display = 'block';
+                } catch (err) {
+                    alert("Não foi possível acessar a câmera: " + err.message);
+                }
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            webcam.style.display = 'none';
+            btnSnap.style.display = 'none';
+        }
+
+        function takeSnapshot() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = webcam.videoWidth;
+            tempCanvas.height = webcam.videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(webcam, 0, 0);
+            
+            const img = new Image();
+            img.onload = () => {
+                currentImage = img;
+                stopCamera();
+                processImage();
+            };
+            img.src = tempCanvas.toDataURL();
+        }
+
+        function processImage() {
+            if (!currentImage) return;
+
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            document.getElementById('val-size').innerText = `${gridResolution}x${gridResolution}`;
+            
+            const exportSize = 512; // Tamanho ideal para asset
+            canvas.width = exportSize;
+            canvas.height = exportSize;
+
+            // Offscreen canvas para redimensionamento de baixa resolução
+            const offscreen = document.createElement('canvas');
+            offscreen.width = gridResolution;
+            offscreen.height = gridResolution;
+            const offCtx = offscreen.getContext('2d');
+
+            // Desenha a imagem reduzida (Pixelation)
+            offCtx.drawImage(currentImage, 0, 0, gridResolution, gridResolution);
+
+            // Redesenha ampliada com imageSmoothingDisabled
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(offscreen, 0, 0, gridResolution, gridResolution, 0, 0, exportSize, exportSize);
+        }
+
+        function downloadPixelArt() {
+            if (!currentImage) {
+                alert("Carregue ou capture uma imagem primeiro!");
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = 'asset_pixel_art.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
