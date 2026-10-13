@@ -1,5 +1,5 @@
 # Bussines-com-ia-
-minhas criações com inteligencias artificiais classificadas por aplicativo e resultado produzido
+minhas criações com inteligencias artificiais classificadas por aplicativo e resultado produzido, além de observações e anotações sobre o fluxo de criação, historico de versões disponivel
 ## objetivos:
 ### acompanhar a evolução das ideias a cada prompt
 ### acompanhar as mudanças e possibilidades de melhoria encontradas conforme contexto inicial vai sendo passado a outro modelo de ia
