@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Studio Pro</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #10b981;
+            --input-bg: #0f172a;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 30px 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        @media (min-width: 900px) {
+            .container { 
+                grid-template-columns: 480px 1fr;
+                gap: 40px;
+                align-items: start;
+            }
+        }
+        .card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            width: 100%;
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+        h1 { font-size: 1.5rem; margin: 0; color: #f8fafc; }
+        h2 { font-size: 1.1rem; color: #38bdf8; margin-top: 0; margin-bottom: 15px; }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        label { font-size: 0.9rem; color: #94a3b8; font-weight: 600; }
+
+        .slider-group {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #0f172a;
+            outline: none;
+            border: 1px solid #475569;
+            margin: 4px 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #818cf8;
+        }
+
+        select, input[type="text"] { 
+            width: 100%; padding: 12px; border-radius: 8px; background: var(--input-bg); color: white; border: 1px solid #475569; font-size: 0.95rem; text-overflow: ellipsis;
+        }
+        
+        /* Acessibilidade: foco visível e contraste claro */
+        button, select, input {
+            transition: outline 0.2s, transform 0.2s;
+        }
+        button:focus-visible, select:focus-visible, input:focus-visible {
+            outline: 2px solid #38bdf8;
+            outline-offset: 2px;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            width: 100%;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-camera { background: #0ea5e9; }
+        .btn-success { background: #22c55e; }
+        .btn-secondary { background: #3b82f6; }
+        
+        .btn-icon-subtle {
+            background: transparent;
+            border: 1px solid #475569;
+            color: #fbbf24;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            width: auto;
+        }
+        .btn-icon-subtle:hover {
+            background: rgba(251, 191, 36, 0.1);
+            border-color: #fbbf24;
+            transform: none;
+        }
+
+        #canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #111827;
+            background-image: 
+                linear-gradient(45deg, #1f2937 25%, transparent 25%), 
+                linear-gradient(-45deg, #1f2937 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #1f2937 75%), 
+                linear-gradient(-45deg, transparent 75%, #1f2937 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            min-height: 380px;
+            padding: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        canvas {
+            image-rendering: pixelated;
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+        video {
+            width: 100%;
+            border-radius: 8px;
+            display: none;
+            max-height: 280px;
+            object-fit: cover;
+            margin-bottom: 12px;
+        }
+
+        .palette-swatches {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            margin-bottom: 20px;
+            justify-content: center;
+            width: 100%;
+        }
+        .swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+        }
+
+        .custom-colors-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .custom-colors-grid input[type="color"] {
+            width: 100%;
+            height: 36px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            background: var(--input-bg);
+            cursor: pointer;
+        }
+
+        .export-block {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid #475569;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .export-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* Modais */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(5px);
+            align-items: center; justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 520px;
+            width: 90%;
+            border: 1px solid #475569;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close-btn {
+            position: absolute; top: 16px; right: 20px;
+            font-size: 1.5rem; color: #94a3b8; cursor: pointer;
+        }
+        .close-btn:hover { color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- COLUNA ESQUERDA: CONFIGURAÇÕES -->
+        <div class="card">
+            <div class="header-title">
+                <h1>🎨 Pixel Art Studio</h1>
+                <button class="btn-icon-subtle" onclick="openTipsModal()" aria-label="Abrir dicas rápidas">💡 Dicas</button>
+            </div>
+            
+            <h2>1. Origem da Imagem</h2>
+            <div class="controls">
+                <button onclick="document.getElementById('file-input').click()" aria-label="Escolher imagens da galeria">📁 Escolher da Galeria (Múltiplas)</button>
+                <input type="file" id="file-input" accept="image/*" multiple style="display: none;" aria-label="Selecionar arquivos de imagem">
+                
+                <button class="btn-camera" onclick="toggleCamera()" aria-label="Ativar câmera do celular">📸 Câmera do Celular</button>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-secondary" style="padding: 10px; font-size: 0.9rem;" onclick="rotateImage(-90)" aria-label="Girar imagem 90 graus para esquerda">↺ Girar -90°</button>
+                    <button class="btn-secondary" style="padding: 10px; font-size: 0.9rem;" onclick="rotateImage(90)" aria-label="Girar imagem 90 graus para direita">↻ Girar +90°</button>
+                </div>
+            </div>
+
+            <video id="webcam" autoplay playsinline aria-label="Visualização da câmera"></video>
+            <button id="btn-snap" class="btn-success" style="display: none; margin-bottom: 20px;" onclick="takeSnapshot()" aria-label="Tirar foto agora">✨ Tirar Foto Agora</button>
+
+            <h2>Presets de Estilo</h2>
+            <div class="controls" style="background: rgba(15, 23, 42, 0.4); padding: 14px; border-radius: 10px; border: 1px solid #334155;">
+                <label for="preset-name">Nome do Preset:</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 10px; margin-top: 4px;">
+                    <input type="text" id="preset-name" placeholder="Ex: RPG Clássico" style="flex: 1; padding: 10px; font-size: 0.9rem;" aria-label="Nome do preset">
+                    <button class="btn-secondary" style="width: auto; padding: 10px 14px; font-size: 0.9rem;" onclick="savePreset()" aria-label="Salvar preset atual">Salvar</button>
+                </div>
+                <label for="preset-select">Presets Salvos:</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; margin-top: 4px;">
+                    <select id="preset-select" style="flex: 1; padding: 10px; font-size: 0.9rem;" aria-label="Selecione um preset salvo">
+                        <option value="">Selecione um preset salvo...</option>
+                    </select>
+                    <button class="btn-success" style="width: auto; padding: 10px 14px; font-size: 0.9rem; background: #059669;" onclick="loadPreset()" aria-label="Aplicar preset selecionado">Aplicar</button>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" style="background: #475569; padding: 8px 12px; font-size: 0.85rem;" onclick="exportPresetsJSON()" aria-label="Exportar presets em arquivo JSON">📥 Exportar JSON</button>
+                    <button class="btn-secondary" style="background: #475569; padding: 8px 12px; font-size: 0.85rem;" onclick="document.getElementById('import-preset-file').click()" aria-label="Importar presets de arquivo JSON">📤 Importar JSON</button>
+                    <input type="file" id="import-preset-file" accept=".json" style="display: none;" onchange="importPresetsJSON(event)" aria-label="Arquivo JSON de presets">
+                </div>
+            </div>
+
+            <h2>2. Ajustes de Estilo</h2>
+            <div class="controls">
+                <label for="conversion-mode">Modo de Conversão:</label>
+                <select id="conversion-mode" onchange="toggleSketchOptions(); processImage(); processBatch();" aria-label="Modo de conversão">
+                    <option value="photo">Modo Foto / Objeto</option>
+                    <option value="remove-bg">Remover fundo</option>
+                </select>
+
+                <label for="framing-mode">Enquadramento:</label>
+                <select id="framing-mode" onchange="processImage(); processBatch();" aria-label="Modo de enquadramento">
+                    <option value="crop">Recortar no centro</option>
+                    <option value="pad">Ajustar com margem</option>
+                </select>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="enable-outline" onchange="toggleOutlineOptions(); processImage(); processBatch();" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;" aria-label="Ativar contorno de 1 pixel">
+                    <label for="enable-outline" style="cursor: pointer; margin: 0;">Ativar Contorno (1px)</label>
+                </div>
+                <div class="slider-group" id="outline-color-group" style="display: none; flex-direction: row; align-items: center; gap: 10px;">
+                    <label for="outline-color" style="flex: 1;">Cor do Contorno:</label>
+                    <input type="color" id="outline-color" value="#000000" onchange="processImage(); processBatch();" style="width: 50px; height: 36px; border: 1px solid #475569; border-radius: 6px; background: var(--input-bg); cursor: pointer;" aria-label="Seletor de cor do contorno">
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="enable-dithering" onchange="toggleDitherOptions(); processImage(); processBatch();" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;" aria-label="Ativar efeito de dithering">
+                    <label for="enable-dithering" style="cursor: pointer; margin: 0;">Ativar Dithering</label>
+                </div>
+                <div class="slider-group" id="dithering-slider-group" style="display: none;">
+                    <label for="dither-intensity">Intensidade do Dithering: <span id="val-dither">50</span>%</label>
+                    <input type="range" id="dither-intensity" min="0" max="100" step="5" value="50" oninput="processImage(); processBatch();" aria-label="Controle deslizante de intensidade do dithering">
+                </div>
+
+                <label for="palette-mode">Paleta:</label>
+                <select id="palette-mode" onchange="togglePaletteOptions(); processImage(); processBatch();" aria-label="Modo de paleta de cores">
+                    <option value="extracted">Extraída da imagem</option>
+                    <option value="gameboy">Game Boy (4 tons de verde)</option>
+                    <option value="classic16">16 cores clássicas</option>
+                    <option value="custom">Paleta personalizada</option>
+                </select>
+
+                <div class="slider-group" id="custom-palette-group" style="display: none;">
+                    <label>Cores Personalizadas (até 8):</label>
+                    <div class="custom-colors-grid" id="custom-colors-container" aria-label="Grade de cores personalizadas">
+                        <input type="color" value="#0f380f" onchange="processImage(); processBatch();" aria-label="Cor personalizada 1">
+                        <input type="color" value="#306230" onchange="processImage(); processBatch();" aria-label="Cor personalizada 2">
+                        <input type="color" value="#8bac0f" onchange="processImage(); processBatch();" aria-label="Cor personalizada 3">
+                        <input type="color" value="#9bbc0f" onchange="processImage(); processBatch();" aria-label="Cor personalizada 4">
+                        <input type="color" value="#000000" onchange="processImage(); processBatch();" aria-label="Cor personalizada 5">
+                        <input type="color" value="#ffffff" onchange="processImage(); processBatch();" aria-label="Cor personalizada 6">
+                        <input type="color" value="#ff004d" onchange="processImage(); processBatch();" aria-label="Cor personalizada 7">
+                        <input type="color" value="#29adff" onchange="processImage(); processBatch();" aria-label="Cor personalizada 8">
+                    </div>
+                </div>
+
+                <label for="sampling-mode">Amostragem:</label>
+                <select id="sampling-mode" onchange="processImage(); processBatch();" aria-label="Modo de amostragem">
+                    <option value="sharp">Nítida (Cor mais frequente)</option>
+                    <option value="smooth">Suave (Média do bloco)</option>
+                </select>
+
+                <div class="slider-group" id="sketch-control-group" style="display: none;">
+                    <label for="bg-threshold">Tolerância do fundo: <span id="val-threshold">30</span></label>
+                    <input type="range" id="bg-threshold" min="0" max="100" step="1" value="30" oninput="processImage(); processBatch();" aria-label="Tolerância para remoção de fundo">
+                </div>
+
+                <div class="slider-group">
+                    <label for="color-levels">Número de cores: <span id="val-colors">16 cores</span></label>
+                    <input type="range" id="color-levels" min="2" max="32" step="1" value="16" oninput="processImage(); processBatch();" aria-label="Níveis de cores">
+                </div>
+
+                <div class="slider-group">
+                    <label for="pixel-size">Resolução Pixelada: <span id="val-size">32x32</span></label>
+                    <input type="range" id="pixel-size" min="16" max="64" step="8" value="32" oninput="processImage(); processBatch();" aria-label="Resolução da pixel art">
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA: RESULTADO E DOWNLOAD -->
+        <div class="card">
+            <div id="single-preview-wrapper">
+                <h2>Resultado</h2>
+                <div id="canvas-container">
+                    <canvas id="pixel-canvas" aria-label="Prévia da pixel art gerada"></canvas>
+                </div>
+
+                <label style="display: block; text-align: center; margin-bottom: 6px;">Paleta Utilizada:</label>
+                <div id="palette-swatches" class="palette-swatches" aria-label="Amostras da paleta utilizada"></div>
+
+                <button class="btn-success" onclick="downloadPixelArt()" style="padding: 16px; font-size: 1.05rem; margin-bottom: 20px;" aria-label="Baixar asset PNG individual">💾 Baixar Asset PNG</button>
+            </div>
+
+            <!-- Grade de Lote -->
+            <div id="batch-preview-wrapper" style="display: none; margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin:0;">📦 Processamento em Lote (<span id="batch-count">0</span>)</h2>
+                    <button class="btn-secondary" style="width: auto; padding: 8px 14px; font-size: 0.9rem;" onclick="processBatch()" aria-label="Aplicar configurações a todas as imagens do lote">🔄 Aplicar a todas</button>
+                </div>
+                <div id="batch-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-height: 360px; overflow-y: auto; padding: 5px; margin-bottom: 20px;" aria-label="Grade de itens em lote">
+                </div>
+            </div>
+
+            <!-- Bloco de Exportação -->
+            <div class="export-block">
+                <h3 style="margin: 0; color: #38bdf8; font-size: 1.05rem;">📦 Exportação, Kits e Documentos (ZIP)</h3>
+                
+                <div class="export-row">
+                    <div>
+                        <label for="kit-prefix">Prefixo do Kit:</label>
+                        <input type="text" id="kit-prefix" value="rpg" placeholder="ex: rpg, item" aria-label="Prefixo do kit">
+                    </div>
+                    <div>
+                        <label for="item-name">Nome do Item (Único):</label>
+                        <input type="text" id="item-name" value="espada" placeholder="ex: espada, poco" aria-label="Nome do item único">
+                    </div>
+                </div>
+
+                <div class="export-row">
+                    <div>
+                        <label for="kit-author">Autora:</label>
+                        <input type="text" id="kit-author" value="Drielly Santiago dos Santos" placeholder="Nome da autora" aria-label="Nome da autora">
+                    </div>
+                    <div>
+                        <label for="kit-license">Tipo de Licença:</label>
+                        <select id="kit-license" aria-label="Tipo de licença">
+                            <option value="Pessoal">Pessoal</option>
+                            <option value="Comercial">Comercial</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="export-row">
+                    <div>
+                        <label for="kit-contact">Contato:</label>
+                        <input type="text" id="kit-contact" value="contato@exemplo.com" placeholder="Email ou rede social" aria-label="Contato da autora">
+                    </div>
+                    <div>
+                        <label for="cover-title">Título da Capa:</label>
+                        <input type="text" id="cover-title" value="Meu Kit RPG Pixel Art" placeholder="Título da capa" aria-label="Título da capa de apresentação">
+                    </div>
+                </div>
+
+                <div class="export-row">
+                    <div>
+                        <label for="cover-bg-color">Cor de Fundo da Capa:</label>
+                        <input type="color" id="cover-bg-color" value="#0f172a" style="width: 100%; height: 42px; border: 1px solid #475569; border-radius: 8px; background: var(--input-bg); cursor: pointer;" aria-label="Cor de fundo da capa">
+                    </div>
+                    <div>
+                        <label for="export-scale">Tamanho de Saída (Individual):</label>
+                        <select id="export-scale" aria-label="Tamanho de escala para exportação individual">
+                            <option value="1">Tamanho Nativo (ex: 32x32)</option>
+                            <option value="4">4x Ampliado</option>
+                            <option value="8">8x Ampliado</option>
+                            <option value="16">16x Ampliado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="include-spritesheet" checked style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;" aria-label="Incluir sprite sheet e JSON no arquivo ZIP">
+                    <label for="include-spritesheet" style="cursor: pointer; margin: 0;">Incluir Sprite Sheet e JSON no ZIP</label>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
+                    <button class="btn-secondary" style="flex:1;" onclick="downloadSelectedSize()" aria-label="Baixar asset no tamanho selecionado">Baixar este tamanho</button>
+                    <button class="btn-success" style="flex:1;" onclick="downloadAllSizes()" aria-label="Baixar asset em 4 tamanhos diferentes">Baixar 4 tamanhos</button>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn-camera" style="background: #8b5cf6; flex: 1;" onclick="downloadKitZip()" aria-label="Baixar kit completo em ZIP">📦 Baixar Kit Completo (ZIP)</button>
+                    <button class="btn-secondary" style="background: #0284c7; flex: 1;" onclick="downloadKitZipWithDocsButton()" aria-label="Gerar documentos e baixar kit completo em ZIP">📄 Gerar documentos do kit</button>
+                    <button class="btn-success" style="background: #10b981; flex: 1;" onclick="downloadCoverArt()" aria-label="Baixar imagem de capa de apresentação em 1200 por 800 pixels">🖼️ Baixar Capa (1200x800)</button>
+                </div>
+            </div>
+
+            <!-- Rodapé com link discreto "Sobre" -->
+            <footer style="text-align: center; margin-top: 30px; font-size: 0.85rem; color: #94a3b8; border-top: 1px solid #334155; padding-top: 16px;">
+                Pixel Art Studio Pro v1.2.0 • Desenvolvido por Drielly Santiago dos Santos | 
+                <a href="javascript:void(0)" onclick="openAboutModal()" style="color: #38bdf8; text-decoration: underline;" aria-label="Abrir painel Sobre e Privacidade">Sobre / Privacidade</a>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL DE DICAS -->
+    <div id="tips-modal" class="modal" role="dialog" aria-modal="true" aria-label="Guia rápido">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeTipsModal()" aria-label="Fechar modal">&times;</span>
+            <h3 style="color: #fbbf24; margin-top: 0; display: flex; align-items: center; gap: 8px; font-size: 1.2rem;">
+                💡 Guia Rápido de Presets e Kits
+            </h3>
+            <div style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">
+                <ul style="padding-left: 20px; margin: 12px 0 0 0;">
+                    <li style="margin-bottom: 10px;"><strong>Painel Presets:</strong> Salve suas configurações atuais com um nome, reaplicar com um clique, e exporte/importe em formato JSON para manter o mesmo estilo em todos os seus kits.</li>
+                    <li style="margin-bottom: 10px;"><strong>Armazenamento Seguro:</strong> Os presets são guardados no <code>localStorage</code> do navegador, protegidos com tratamento contra bloqueios.</li>
+                    <li><strong>Lotes e Documentos:</strong> Processe imagens, ajuste orientações, gere sprite sheets, capas de apresentação e documentos automaticamente.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SOBRE E PRIVACIDADE -->
+    <div id="about-modal" class="modal" role="dialog" aria-modal="true" aria-label="Sobre e Privacidade">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeAboutModal()" aria-label="Fechar modal Sobre">&times;</span>
+            <h3 style="color: #38bdf8; margin-top: 0; display: flex; align-items: center; gap: 8px; font-size: 1.2rem;">
+                ℹ️ Sobre o Pixel Art Studio Pro
+            </h3>
+            <div style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">
+                <p><strong>Versão:</strong> 1.2.0</p>
+                <p><strong>Autora / Marca:</strong> Drielly Santiago dos Santos</p>
+                <p><strong>Privacidade e Processamento Local:</strong> Todo o processamento de imagens, conversão para pixel art, montagem de sprite sheet, capas e geração de arquivos ZIP ocorre 100% no seu dispositivo (client-side). <em>Nenhuma imagem, arquivo ou dado pessoal é enviado ou armazenado em servidores externos.</em></p>
+                <p><strong>Licença de Uso do Aplicativo:</strong> Ferramenta desenvolvida para uso profissional e criativo na produção independente de assets, kits gráficos e desenvolvimento de jogos.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pixel-canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const webcam = document.getElementById('webcam');
+        const btnSnap = document.getElementById('btn-snap');
+        let currentImage = null;
+        let currentRotation = 0;
+        let stream = null;
+        let batchItems = [];
+
+        const bayerMatrix = [
+            [ 0,  8,  2, 10],
+            [12,  4, 14,  6],
+            [ 3, 11,  1,  9],
+            [15,  7, 13,  5]
+        ];
+
+        const presetPalettes = {
+            gameboy: [
+                [15, 56, 15],
+                [48, 98, 48],
+                [139, 172, 15],
+                [155, 188, 15]
+            ],
+            classic16: [
+                [0, 0, 0], [29, 43, 83], [126, 37, 83], [0, 135, 81],
+                [171, 82, 54], [95, 87, 79], [194, 195, 199], [255, 241, 232],
+                [255, 0, 77], [255, 163, 0], [255, 236, 39], [0, 228, 54],
+                [41, 173, 255], [131, 118, 156], [255, 119, 168], [255, 204, 170]
+            ]
+        };
+
+        function openTipsModal() { document.getElementById('tips-modal').classList.add('active'); }
+        function closeTipsModal() { document.getElementById('tips-modal').classList.remove('active'); }
+        
+        function openAboutModal() { document.getElementById('about-modal').classList.add('active'); }
+        function closeAboutModal() { document.getElementById('about-modal').classList.remove('active'); }
+
+        window.onclick = function(event) {
+            const tipsModal = document.getElementById('tips-modal');
+            const aboutModal = document.getElementById('about-modal');
+            if (event.target == tipsModal) closeTipsModal();
+            if (event.target == aboutModal) closeAboutModal();
+        }
+
+        function toggleSketchOptions() {
+            const mode = document.getElementById('conversion-mode').value;
+            const sketchGroup = document.getElementById('sketch-control-group');
+            sketchGroup.style.display = (mode === 'remove-bg') ? 'flex' : 'none';
+        }
+
+        function toggleOutlineOptions() {
+            const enabled = document.getElementById('enable-outline').checked;
+            document.getElementById('outline-color-group').style.display = enabled ? 'flex' : 'none';
+        }
+
+        function toggleDitherOptions() {
+            const enabled = document.getElementById('enable-dithering').checked;
+            document.getElementById('dithering-slider-group').style.display = enabled ? 'flex' : 'none';
+        }
+
+        function togglePaletteOptions() {
+            const paletteMode = document.getElementById('palette-mode').value;
+            const customGroup = document.getElementById('custom-palette-group');
+            const colorsSlider = document.getElementById('color-levels').closest('.slider-group');
+            
+            customGroup.style.display = (paletteMode === 'custom') ? 'flex' : 'none';
+            colorsSlider.style.display = (paletteMode === 'gameboy') ? 'none' : 'flex';
+        }
+
+        // --- SISTEMA DE PRESETS COM LOCALSTORAGE SEGURO ---
+        function getStoredPresets() {
+            try {
+                const data = localStorage.getItem('pixel_art_studio_presets');
+                return data ? JSON.parse(data) : {};
+            } catch (e) {
+                console.warn('LocalStorage bloqueado ou indisponível:', e);
+                return {};
+            }
+        }
+
+        function saveStoredPresets(presetsMap) {
+            try {
+                localStorage.setItem('pixel_art_studio_presets', JSON.stringify(presetsMap));
+            } catch (e) {
+                console.warn('Não foi possível salvar no localStorage:', e);
+                alert('Aviso: O navegador bloqueou o salvamento local. Seus presets funcionam apenas nesta sessão.');
+            }
+        }
+
+        function updatePresetDropdown() {
+            const select = document.getElementById('preset-select');
+            const presets = getStoredPresets();
+            select.innerHTML = '<option value="">Selecione um preset salvo...</option>';
+            Object.keys(presets).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = name;
+                select.appendChild(opt);
+            });
+        }
+
+        function getCurrentSettingsObject() {
+            const colorInputs = document.querySelectorAll('#custom-colors-container input[type="color"]');
+            const customColors = Array.from(colorInputs).map(input => input.value);
+
+            return {
+                conversionMode: document.getElementById('conversion-mode').value,
+                framingMode: document.getElementById('framing-mode').value,
+                enableOutline: document.getElementById('enable-outline').checked,
+                outlineColor: document.getElementById('outline-color').value,
+                enableDithering: document.getElementById('enable-dithering').checked,
+                ditherIntensity: document.getElementById('dither-intensity').value,
+                paletteMode: document.getElementById('palette-mode').value,
+                customColors: customColors,
+                samplingMode: document.getElementById('sampling-mode').value,
+                bgThreshold: document.getElementById('bg-threshold').value,
+                colorLevels: document.getElementById('color-levels').value,
+                pixelSize: document.getElementById('pixel-size').value
+            };
+        }
+
+        function applySettingsObject(s) {
+            if (!s) return;
+            if (s.conversionMode) document.getElementById('conversion-mode').value = s.conversionMode;
+            if (s.framingMode) document.getElementById('framing-mode').value = s.framingMode;
+            if (s.enableOutline !== undefined) document.getElementById('enable-outline').checked = s.enableOutline;
+            if (s.outlineColor) document.getElementById('outline-color').value = s.outlineColor;
+            if (s.enableDithering !== undefined) document.getElementById('enable-dithering').checked = s.enableDithering;
+            if (s.ditherIntensity !== undefined) document.getElementById('dither-intensity').value = s.ditherIntensity;
+            if (s.paletteMode) document.getElementById('palette-mode').value = s.paletteMode;
+            if (s.customColors && Array.isArray(s.customColors)) {
+                const colorInputs = document.querySelectorAll('#custom-colors-container input[type="color"]');
+                s.customColors.forEach((hex, idx) => {
+                    if (colorInputs[idx]) colorInputs[idx].value = hex;
+                });
+            }
+            if (s.samplingMode) document.getElementById('sampling-mode').value = s.samplingMode;
+            if (s.bgThreshold !== undefined) document.getElementById('bg-threshold').value = s.bgThreshold;
+            if (s.colorLevels !== undefined) document.getElementById('color-levels').value = s.colorLevels;
+            if (s.pixelSize !== undefined) document.getElementById('pixel-size').value = s.pixelSize;
+
+            toggleSketchOptions();
+            toggleOutlineOptions();
+            toggleDitherOptions();
+            togglePaletteOptions();
+            processImage();
+            processBatch();
+        }
+
+        function savePreset() {
+            const nameInput = document.getElementById('preset-name');
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('Por favor, digite um nome para o preset!');
+                return;
+            }
+            const presets = getStoredPresets();
+            presets[name] = getCurrentSettingsObject();
+            saveStoredPresets(presets);
+            updatePresetDropdown();
+            nameInput.value = '';
+            alert(`Preset "${name}" salvo com sucesso!`);
+        }
+
+        function loadPreset() {
+            const select = document.getElementById('preset-select');
+            const name = select.value;
+            if (!name) {
+                alert('Por favor, selecione um preset para carregar!');
+                return;
+            }
+            const presets = getStoredPresets();
+            if (presets[name]) {
+                applySettingsObject(presets[name]);
+            }
+        }
+
+        function exportPresetsJSON() {
+            const presets = getStoredPresets();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(presets, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "pixel_art_presets.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importPresetsJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    const current = getStoredPresets();
+                    const merged = { ...current, ...imported };
+                    saveStoredPresets(merged);
+                    updatePresetDropdown();
+                    alert("Presets importados com sucesso!");
+                } catch (err) {
+                    alert("Erro ao ler o arquivo JSON de presets: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // --- CARREGAMENTO DE IMAGEM COM VALIDAÇÕES AMIGÁVEIS E EXIF ---
+        async function loadImageFromFile(file) {
+            try {
+                return await createImageBitmap(file, { imageOrientation: 'from-image' });
+            } catch (err) {
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = reject;
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        fileInput.addEventListener('change', async (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                batchItems = [];
+                currentRotation = 0;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    // Validação amigável: tipo de arquivo
+                    if (!file.type.startsWith('image/')) {
+                        alert(`O arquivo "${file.name}" não é uma imagem válida. Por favor, envie arquivos PNG, JPG ou WebP.`);
+                        continue;
+                    }
+                    // Validação amigável: tamanho máximo (ex: 35MB)
+                    if (file.size > 35 * 1024 * 1024) {
+                        alert(`O arquivo "${file.name}" é muito grande (>35MB). Para melhor desempenho, utilize imagens menores.`);
+                        continue;
+                    }
+
+                    try {
+                        const loadedImg = await loadImageFromFile(file);
+                        batchItems.push({
+                            file: file,
+                            img: loadedImg,
+                            name: sanitizeText(file.name.substring(0, file.name.lastIndexOf('.')) || `item_${i+1}`),
+                            canvas: document.createElement('canvas')
+                        });
+                    } catch (err) {
+                        alert(`Não foi possível carregar a imagem "${file.name}". O arquivo pode estar corrompido.`);
+                    }
+                }
+                stopCamera();
+                if (batchItems.length > 0) {
+                    currentImage = batchItems[0].img;
+                    processImage();
+                    await processBatch();
+                }
+            }
+        });
+
+        async function toggleCamera() {
+            if (stream) {
+                stopCamera();
+            } else {
+                try {
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        alert("Aviso: Seu navegador não suporta acesso à câmera por motivos de segurança ou restrição de contexto (HTTPS necessário).");
+                        return;
+                    }
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: { exact: "environment" } } 
+                    }).catch(() => navigator.mediaDevices.getUserMedia({ video: true }));
+
+                    webcam.srcObject = stream;
+                    webcam.style.display = 'block';
+                    btnSnap.style.display = 'block';
+                } catch (err) {
+                    alert("Não foi possível acessar a câmera do dispositivo. Verifique as permissões do navegador. Erro: " + err.message);
+                }
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            webcam.style.display = 'none';
+            btnSnap.style.display = 'none';
+        }
+
+        function takeSnapshot() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = webcam.videoWidth || 640;
+            tempCanvas.height = webcam.videoHeight || 480;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(webcam, 0, 0);
+            
+            const img = new Image();
+            img.onload = () => {
+                currentRotation = 0;
+                batchItems = [{
+                    file: null,
+                    img: img,
+                    name: "foto_camera",
+                    canvas: document.createElement('canvas')
+                }];
+                currentImage = img;
+                processImage();
+                processBatch();
+            };
+            img.src = tempCanvas.toDataURL();
+            stopCamera();
+        }
+
+        function rotateImage(angle) {
+            if (!currentImage) return;
+            currentRotation = (currentRotation + angle + 360) % 360;
+            processImage();
+        }
+
+        function getRotatedImageCanvas(img, rotation) {
+            const c = document.createElement('canvas');
+            const w = img.width;
+            const h = img.height;
+            
+            if (rotation === 90 || rotation === 270) {
+                c.width = h;
+                c.height = w;
+            } else {
+                c.width = w;
+                c.height = h;
+            }
+            
+            const ctx = c.getContext('2d');
+            ctx.save();
+            ctx.translate(c.width / 2, c.height / 2);
+            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.drawImage(img, -w / 2, -h / 2);
+            ctx.restore();
+            return c;
+        }
+
+        function medianCut(pixels, numColors) {
+            if (pixels.length === 0) return [[0,0,0]];
+            let boxes = [pixels];
+            while (boxes.length < numColors) {
+                let maxRange = -1;
+                let splitIndex = -1;
+                for (let i = 0; i < boxes.length; i++) {
+                    let box = boxes[i];
+                    if (box.length <= 1) continue;
+                    let rMin = 255, rMax = 0, gMin = 255, gMax = 0, bMin = 255, bMax = 0;
+                    for (let p of box) {
+                        if (p.r < rMin) rMin = p.r; if (p.r > rMax) rMax = p.r;
+                        if (p.g < gMin) gMin = p.g; if (p.g > gMax) gMax = p.g;
+                        if (p.b < bMin) bMin = p.b; if (p.b > bMax) bMax = p.b;
+                    }
+                    let range = Math.max(rMax - rMin, gMax - gMin, bMax - bMin);
+                    if (range > maxRange) {
+                        maxRange = range;
+                        splitIndex = i;
+                    }
+                }
+                if (splitIndex === -1) break;
+
+                let box = boxes.splice(splitIndex, 1)[0];
+                let rMin = 255, rMax = 0, gMin = 255, gMax = 0, bMin = 255, bMax = 0;
+                for (let p of box) {
+                    if (p.r < rMin) rMin = p.r; if (p.r > rMax) rMax = p.r;
+                    if (p.g < gMin) gMin = p.g; if (p.g > gMax) gMax = p.g;
+                    if (p.b < bMin) bMin = p.b; if (p.b > bMax) bMax = p.b;
+                }
+                let channel = 'r';
+                let rRange = rMax - rMin, gRange = gMax - gMin, bRange = bMax - bMin;
+                if (gRange >= rRange && gRange >= bRange) channel = 'g';
+                else if (bRange >= rRange && bRange >= gRange) channel = 'b';
+
+                box.sort((a, b) => a[channel] - b[channel]);
+                let mid = Math.floor(box.length / 2);
+                boxes.push(box.slice(0, mid));
+                boxes.push(box.slice(mid));
+            }
+
+            return boxes.map(box => {
+                let sumR = 0, sumG = 0, sumB = 0;
+                for (let p of box) {
+                    sumR += p.r; sumG += p.g; sumB += p.b;
+                }
+                return [
+                    Math.round(sumR / box.length),
+                    Math.round(sumG / box.length),
+                    Math.round(sumB / box.length)
+                ];
+            });
+        }
+
+        function getClosestColor(r, g, b, palette) {
+            let minDist = Infinity;
+            let bestColor = palette[0];
+            for (let col of palette) {
+                let dr = r - col[0];
+                let dg = g - col[1];
+                let db = b - col[2];
+                let dist = 0.3 * dr*dr + 0.59 * dg*dg + 0.11 * db*db;
+                if (dist < minDist) {
+                    minDist = dist;
+                    bestColor = col;
+                }
+            }
+            return bestColor;
+        }
+
+        function renderPaletteSwatches(palette) {
+            const container = document.getElementById('palette-swatches');
+            container.innerHTML = '';
+            for (let col of palette) {
+                const swatch = document.createElement('div');
+                swatch.className = 'swatch';
+                swatch.style.backgroundColor = `rgb(${col[0]}, ${col[1]}, ${col[2]})`;
+                swatch.title = `RGB(${col[0]}, ${col[1]}, ${col[2]})`;
+                container.appendChild(swatch);
+            }
+        }
+
+        function sanitizeText(str) {
+            if (!str) return 'item';
+            return str.normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .toLowerCase()
+                      .trim()
+                      .replace(/[^a-z0-9]+/g, '_')
+                      .replace(/^_+|_+$/g, '') || 'item';
+        }
+
+        function processImageToTargetCanvas(sourceImg, targetCanvas, res, rotation = 0) {
+            const exportSize = 512;
+            targetCanvas.width = exportSize;
+            targetCanvas.height = exportSize;
+            const tCtx = targetCanvas.getContext('2d');
+
+            const rotatedImg = getRotatedImageCanvas(sourceImg, rotation);
+
+            const offscreen = document.createElement('canvas');
+            offscreen.width = res;
+            offscreen.height = res;
+            const offCtx = offscreen.getContext('2d');
+            offCtx.clearRect(0, 0, res, res);
+
+            const mode = document.getElementById('conversion-mode').value;
+            const framingMode = document.getElementById('framing-mode').value;
+            const samplingMode = document.getElementById('sampling-mode').value;
+            const paletteMode = document.getElementById('palette-mode').value;
+            const colorCount = parseInt(document.getElementById('color-levels').value);
+            const toleranceVal = parseInt(document.getElementById('bg-threshold').value);
+            const enableDither = document.getElementById('enable-dithering').checked;
+            const ditherIntensity = parseInt(document.getElementById('dither-intensity').value);
+            const enableOutline = document.getElementById('enable-outline').checked;
+
+            let workImg = rotatedImg;
+            const maxSide = Math.max(rotatedImg.width, rotatedImg.height);
+            if (maxSide > 2000) {
+                const scaleDown = 2000 / maxSide;
+                const optCanvas = document.createElement('canvas');
+                optCanvas.width = Math.round(rotatedImg.width * scaleDown);
+                optCanvas.height = Math.round(rotatedImg.height * scaleDown);
+                const optCtx = optCanvas.getContext('2d');
+                optCtx.drawImage(rotatedImg, 0, 0, optCanvas.width, optCanvas.height);
+                workImg = optCanvas;
+            }
+
+            const imgW = workImg.width;
+            const imgH = workImg.height;
+            const baseSize = Math.max(imgW, imgH);
+
+            const highCanvas = document.createElement('canvas');
+            highCanvas.width = baseSize;
+            highCanvas.height = baseSize;
+            const highCtx = highCanvas.getContext('2d');
+            highCtx.clearRect(0, 0, baseSize, baseSize);
+
+            let sW, sH, dx, dy;
+            if (framingMode === 'crop') {
+                const scale = Math.max(baseSize / imgW, baseSize / imgH);
+                sW = imgW * scale;
+                sH = imgH * scale;
+                dx = (baseSize - sW) / 2;
+                dy = (baseSize - sH) / 2;
+            } else {
+                const scale = Math.min(baseSize / imgW, baseSize / imgH);
+                sW = imgW * scale;
+                sH = imgH * scale;
+                dx = (baseSize - sW) / 2;
+                dy = (baseSize - sH) / 2;
+            }
+
+            highCtx.drawImage(workImg, dx, dy, sW, sH);
+            const highData = highCtx.getImageData(0, 0, baseSize, baseSize).data;
+
+            let activePalette = [];
+            if (paletteMode === 'gameboy') {
+                activePalette = presetPalettes.gameboy;
+            } else if (paletteMode === 'classic16') {
+                activePalette = presetPalettes.classic16;
+            } else if (paletteMode === 'custom') {
+                const colorInputs = document.querySelectorAll('#custom-colors-container input[type="color"]');
+                activePalette = Array.from(colorInputs).map(input => {
+                    const hex = input.value;
+                    return [
+                        parseInt(hex.slice(1,3), 16),
+                        parseInt(hex.slice(3,5), 16),
+                        parseInt(hex.slice(5,7), 16)
+                    ];
+                });
+            } else {
+                let samplePixels = [];
+                for (let i = 0; i < highData.length; i += 16) {
+                    if (highData[i+3] >= 128) {
+                        samplePixels.push({ r: highData[i], g: highData[i+1], b: highData[i+2] });
+                    }
+                }
+                activePalette = medianCut(samplePixels, colorCount);
+            }
+
+            renderPaletteSwatches(activePalette);
+
+            const outImgData = offCtx.createImageData(res, res);
+            const outData = outImgData.data;
+            const blockSize = baseSize / res;
+
+            for (let gy = 0; gy < res; gy++) {
+                for (let gx = 0; gx < res; gx++) {
+                    const startX = Math.floor(gx * blockSize);
+                    const endX = Math.floor((gx + 1) * blockSize);
+                    const startY = Math.floor(gy * blockSize);
+                    const endY = Math.floor((gy + 1) * blockSize);
+
+                    let totalR = 0, totalG = 0, totalB = 0, count = 0, transparentCount = 0;
+                    let colorBins = {};
+
+                    for (let y = startY; y < endY; y++) {
+                        for (let x = startX; x < endX; x++) {
+                            if (x < 0 || x >= baseSize || y < 0 || y >= baseSize) continue;
+                            const pIdx = (y * baseSize + x) * 4;
+                            const a = highData[pIdx + 3];
+                            if (a < 128) {
+                                transparentCount++;
+                                continue;
+                            }
+                            const r = highData[pIdx];
+                            const g = highData[pIdx + 1];
+                            const b = highData[pIdx + 2];
+
+                            totalR += r;
+                            totalG += g;
+                            totalB += b;
+                            count++;
+
+                            if (samplingMode === 'sharp') {
+                                const qr = Math.floor(r / 16) * 16;
+                                const qg = Math.floor(g / 16) * 16;
+                                const qb = Math.floor(b / 16) * 16;
+                                const key = `${qr},${qg},${qb}`;
+                                if (!colorBins[key]) {
+                                    colorBins[key] = { count: 0, rSum: 0, gSum: 0, bSum: 0 };
+                                }
+                                colorBins[key].count++;
+                                colorBins[key].rSum += r;
+                                colorBins[key].gSum += g;
+                                colorBins[key].bSum += b;
+                            }
+                        }
+                    }
+
+                    const outIdx = (gy * res + gx) * 4;
+                    const totalPixelsInBlock = (endX - startX) * (endY - startY);
+
+                    if (transparentCount > totalPixelsInBlock / 2 || count === 0) {
+                        outData[outIdx]     = 0;
+                        outData[outIdx + 1] = 0;
+                        outData[outIdx + 2] = 0;
+                        outData[outIdx + 3] = 0;
+                    } else {
+                        let rFinal, gFinal, bFinal;
+                        if (samplingMode === 'sharp' && Object.keys(colorBins).length > 0) {
+                            let maxBinKey = Object.keys(colorBins)[0];
+                            for (let key in colorBins) {
+                                if (colorBins[key].count > colorBins[maxBinKey].count) {
+                                    maxBinKey = key;
+                                }
+                            }
+                            const bin = colorBins[maxBinKey];
+                            rFinal = bin.rSum / bin.count;
+                            gFinal = bin.gSum / bin.count;
+                            bFinal = bin.bSum / bin.count;
+                        } else {
+                            rFinal = totalR / count;
+                            gFinal = totalG / count;
+                            bFinal = totalB / count;
+                        }
+
+                        if (enableDither) {
+                            const bayerVal = bayerMatrix[gy % 4][gx % 4];
+                            const threshold = ((bayerVal / 15) - 0.5) * (ditherIntensity / 100) * 50;
+                            rFinal = Math.min(255, Math.max(0, rFinal + threshold));
+                            gFinal = Math.min(255, Math.max(0, gFinal + threshold));
+                            bFinal = Math.min(255, Math.max(0, bFinal + threshold));
+                        }
+
+                        const matched = getClosestColor(rFinal, gFinal, bFinal, activePalette);
+                        outData[outIdx]     = matched[0];
+                        outData[outIdx + 1] = matched[1];
+                        outData[outIdx + 2] = matched[2];
+                        outData[outIdx + 3] = 255;
+                    }
+                }
+            }
+            offCtx.putImageData(outImgData, 0, 0);
+
+            if (mode === 'remove-bg') {
+                const width = res;
+                const height = res;
+                const postData = offCtx.getImageData(0, 0, width, height);
+                const data = postData.data;
+
+                let sumR = 0, sumG = 0, sumB = 0, borderCount = 0;
+                for (let x = 0; x < width; x++) {
+                    let idx1 = (0 * width + x) * 4;
+                    let idx2 = ((height - 1) * width + x) * 4;
+                    if (data[idx1+3] > 0) { sumR += data[idx1]; sumG += data[idx1+1]; sumB += data[idx1+2]; borderCount++; }
+                    if (data[idx2+3] > 0) { sumR += data[idx2]; sumG += data[idx2+1]; sumB += data[idx2+2]; borderCount++; }
+                }
+                for (let y = 1; y < height - 1; y++) {
+                    let idx1 = (y * width + 0) * 4;
+                    let idx2 = (y * width + (width - 1)) * 4;
+                    if (data[idx1+3] > 0) { sumR += data[idx1]; sumG += data[idx1+1]; sumB += data[idx1+2]; borderCount++; }
+                    if (data[idx2+3] > 0) { sumR += data[idx2]; sumG += data[idx2+1]; sumB += data[idx2+2]; borderCount++; }
+                }
+                const bgR = borderCount > 0 ? sumR / borderCount : 255;
+                const bgG = borderCount > 0 ? sumG / borderCount : 255;
+                const bgB = borderCount > 0 ? sumB / borderCount : 255;
+
+                const visited = new Uint8Array(width * height);
+                const queue = [];
+                const maxDist = (toleranceVal / 100) * 441.67;
+
+                function colorDist(r1, g1, b1, r2, g2, b2) {
+                    return Math.sqrt((r1 - r2)**2 + (g1 - g2)**2 + (b1 - b2)**2);
+                }
+
+                function addBorderSeed(x, y) {
+                    const idx = y * width + x;
+                    if (visited[idx]) return;
+                    visited[idx] = 1;
+                    const i = idx * 4;
+                    if (data[i+3] === 0) {
+                        queue.push({x, y});
+                        return;
+                    }
+                    const dist = colorDist(data[i], data[i+1], data[i+2], bgR, bgG, bgB);
+                    if (dist <= maxDist) {
+                        queue.push({x, y});
+                    }
+                }
+
+                for (let x = 0; x < width; x++) {
+                    addBorderSeed(x, 0);
+                    addBorderSeed(x, height - 1);
+                }
+                for (let y = 1; y < height - 1; y++) {
+                    addBorderSeed(0, y);
+                    addBorderSeed(width - 1, y);
+                }
+
+                let head = 0;
+                while (head < queue.length) {
+                    const {x, y} = queue[head++];
+                    const idx = y * width + x;
+                    const i = idx * 4;
+
+                    data[i + 3] = 0;
+
+                    const neighbors = [
+                        {x: x+1, y: y}, {x: x-1, y: y},
+                        {x: x, y: y+1}, {x: x, y: y-1}
+                    ];
+
+                    for (const n of neighbors) {
+                        if (n.x >= 0 && n.x < width && n.y >= 0 && n.y < height) {
+                            const nIdx = n.y * width + n.x;
+                            if (!visited[nIdx]) {
+                                visited[nIdx] = 1;
+                                const ni = nIdx * 4;
+                                if (data[ni+3] === 0) {
+                                    queue.push({x: n.x, y: n.y});
+                                    continue;
+                                }
+                                const dist = colorDist(data[ni], data[ni+1], data[ni+2], bgR, bgG, bgB);
+                                if (dist <= maxDist) {
+                                    queue.push({x: n.x, y: n.y});
+                                }
+                            }
+                        }
+                    }
+                }
+                offCtx.putImageData(postData, 0, 0);
+            }
+
+            if (enableOutline) {
+                const outlineColHex = document.getElementById('outline-color').value;
+                const oR = parseInt(outlineColHex.slice(1,3), 16);
+                const oG = parseInt(outlineColHex.slice(3,5), 16);
+                const oB = parseInt(outlineColHex.slice(5,7), 16);
+
+                const finalDataObj = offCtx.getImageData(0, 0, res, res);
+                const finalData = finalDataObj.data;
+                const alphaCopy = new Uint8Array(res * res);
+                for (let i = 0; i < res * res; i++) {
+                    alphaCopy[i] = finalData[i * 4 + 3];
+                }
+
+                for (let y = 0; y < res; y++) {
+                    for (let x = 0; x < res; x++) {
+                        const idx = y * res + x;
+                        const i = idx * 4;
+                        if (alphaCopy[idx] === 0) {
+                            let hasOpaqueNeighbor = false;
+                            const neighbors = [
+                                {x: x+1, y: y}, {x: x-1, y: y},
+                                {x: x, y: y+1}, {x: x, y: y-1}
+                            ];
+                            for (const n of neighbors) {
+                                if (n.x >= 0 && n.x < res && n.y >= 0 && n.y < res) {
+                                    const nIdx = n.y * res + n.x;
+                                    if (alphaCopy[nIdx] > 128) {
+                                        hasOpaqueNeighbor = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (hasOpaqueNeighbor) {
+                                finalData[i]     = oR;
+                                finalData[i + 1] = oG;
+                                finalData[i + 2] = oB;
+                                finalData[i + 3] = 255;
+                            }
+                        }
+                    }
+                }
+                offCtx.putImageData(finalDataObj, 0, 0);
+            }
+
+            tCtx.imageSmoothingEnabled = false;
+            tCtx.clearRect(0, 0, exportSize, exportSize);
+            tCtx.drawImage(offscreen, 0, 0, res, res, 0, 0, exportSize, exportSize);
+        }
+
+        function processImage() {
+            if (!currentImage) return;
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            document.getElementById('val-size').innerText = `${gridResolution}x${gridResolution}`;
+            document.getElementById('val-colors').innerText = `${document.getElementById('color-levels').value} cores`;
+            document.getElementById('val-threshold').innerText = document.getElementById('bg-threshold').value;
+            document.getElementById('val-dither').innerText = document.getElementById('dither-intensity').value;
+
+            processImageToTargetCanvas(currentImage, canvas, gridResolution, currentRotation);
+        }
+
+        async function processBatch() {
+            if (batchItems.length === 0) return;
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            
+            document.getElementById('batch-count').innerText = batchItems.length;
+
+            for (let i = 0; i < batchItems.length; i++) {
+                processImageToTargetCanvas(batchItems[i].img, batchItems[i].canvas, gridResolution, 0);
+                await new Promise(r => setTimeout(r, 5));
+            }
+            renderBatchGrid();
+
+            if (batchItems.length > 0) {
+                document.getElementById('batch-preview-wrapper').style.display = 'block';
+            }
+        }
+
+        function renderBatchGrid() {
+            const grid = document.getElementById('batch-grid');
+            grid.innerHTML = '';
+            batchItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'background: #0f172a; border: 1px solid #475569; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px;';
+                
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.width = 96;
+                thumbCanvas.height = 96;
+                thumbCanvas.style.cssText = 'width: 96px; height: 96px; image-rendering: pixelated; border-radius: 4px; background-color: #111827; background-image: linear-gradient(45deg, #1f2937 25%, transparent 25%), linear-gradient(-45deg, #1f2937 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1f2937 75%), linear-gradient(-45deg, transparent 75%, #1f2937 75%); background-size: 12px 12px;';
+                const tCtx = thumbCanvas.getContext('2d');
+                tCtx.imageSmoothingEnabled = false;
+                tCtx.drawImage(item.canvas, 0, 0, 96, 96);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = item.name;
+                input.placeholder = 'nome do item';
+                input.style.cssText = 'width: 100%; padding: 6px; font-size: 0.85rem; border-radius: 6px; background: var(--input-bg); color: white; border: 1px solid #475569; text-align: center;';
+                input.setAttribute('aria-label', `Nome do item ${index + 1}`);
+                input.oninput = (e) => {
+                    item.name = sanitizeText(e.target.value);
+                };
+
+                const labelNum = document.createElement('span');
+                labelNum.style.cssText = 'font-size: 0.75rem; color: #94a3b8;';
+                const numStr = String(index + 1).padStart(2, '0');
+                labelNum.innerText = `item${numStr}`;
+
+                card.appendChild(labelNum);
+                card.appendChild(thumbCanvas);
+                card.appendChild(input);
+                grid.appendChild(card);
+            });
+        }
+
+        function generateSpriteSheetData() {
+            if (batchItems.length === 0) return null;
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            const cols = Math.min(4, batchItems.length);
+            const rows = Math.ceil(batchItems.length / cols);
+            const spacing = 1;
+
+            const sheetWidth = cols * (gridResolution + spacing) + spacing;
+            const sheetHeight = rows * (gridResolution + spacing) + spacing;
+
+            const sheetCanvas = document.createElement('canvas');
+            sheetCanvas.width = sheetWidth;
+            sheetCanvas.height = sheetHeight;
+            const sCtx = sheetCanvas.getContext('2d');
+            sCtx.imageSmoothingEnabled = false;
+            sCtx.clearRect(0, 0, sheetWidth, sheetHeight);
+
+            const frames = {};
+
+            batchItems.forEach((item, index) => {
+                const col = index % cols;
+                const row = Math.floor(index / cols);
+                const x = spacing + col * (gridResolution + spacing);
+                const y = spacing + row * (gridResolution + spacing);
+
+                sCtx.drawImage(item.canvas, 0, 0, 512, 512, x, y, gridResolution, gridResolution);
+
+                frames[item.name] = {
+                    name: item.name,
+                    x: x,
+                    y: y,
+                    width: gridResolution,
+                    height: gridResolution
+                };
+            });
+
+            return {
+                canvas: sheetCanvas,
+                json: {
+                    meta: {
+                        image: "spritesheet.png",
+                        size: { w: sheetWidth, h: sheetHeight },
+                        grid: gridResolution
+                    },
+                    frames: frames
+                }
+            };
+        }
+
+        function generateKitDocuments(fileList) {
+            const kitName = document.getElementById('cover-title').value || "Kit Pixel Art";
+            const author = document.getElementById('kit-author').value || "Drielly Santiago dos Santos";
+            const licenseType = document.getElementById('kit-license').value || "Pessoal";
+            const contact = document.getElementById('kit-contact').value || "contato@exemplo.com";
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            const colorCount = parseInt(document.getElementById('color-levels').value);
+            const todayStr = new Date().toLocaleDateString('pt-BR');
+            const itemCount = batchItems.length;
+
+            let readmeContent = 
+`==================================================
+LEIA-ME - PIXEL ART KIT
+==================================================
+Nome do Kit: ${kitName}
+Autora: ${author}
+Data de Geração: ${todayStr}
+Quantidade de Itens: ${itemCount}
+Resolução Nativa: ${gridResolution}x${gridResolution}
+Número de Cores: ${colorCount} cores
+
+ESTRUTURA DE PASTAS E ARQUIVOS:
+`;
+            fileList.forEach(f => {
+                readmeContent += `- ${f}\n`;
+            });
+
+            readmeContent += `
+COMO USAR O SPRITE SHEET:
+O arquivo spritesheet.png combina todos os itens do lote dispostos em uma grade com espaçamento de 1 pixel transparente.
+O arquivo spritesheet.json fornece as coordenadas (x, y), largura e altura exatas de cada quadro para integração direta em engines de jogos.
+==================================================`;
+
+            let licenseContent = 
+`==================================================
+TERMO DE LICENÇA DE USO - PIXEL ART KIT
+==================================================
+Kit: ${kitName}
+Autora: ${author}
+Tipo de Licença: ${licenseType}
+Contato para Suporte/Dúvidas: ${contact}
+
+1. AUTORIA E DIREITOS
+A autoria e todos os direitos morais e patrimoniais sobre os assets e arquivos gráficos pertencem integralmente à autora (${author}).
+
+2. O QUE O COMPRADOR PODE FAZER:
+- Utilizar os assets em projetos de jogos eletrônicos, mídias digitais e aplicações pessoais ou comerciais.
+- Modificar, recortar e adaptar os sprites para atender às necessidades do seu projeto.
+
+3. O QUE É PROIBIDO (RESTRIÇÕES):
+- Revender os assets individualmente ou como pacotes de recursos gráficos.
+- Redistribuir os arquivos originais brutos publicamente ou para terceiros.
+- Utilizar os arquivos, imagens ou sprites para treinar modelos de Inteligência Artificial (IA), aprendizado de máquina ou geradores sintéticos de imagens.
+
+4. AUSÊNCIA DE GARANTIA
+Os assets são fornecidos "como estão", sem garantias de qualquer espécie, expressas ou implícitas. A autora não se responsabiliza por eventuais danos decorrentes do uso destes arquivos.
+
+[AVISO LEGAL: Este documento é um modelo padrão gerado pelo Pixel Art Studio Pro e serve como base legal para os termos de uso dos assets.]
+==================================================`;
+
+            return { readme: readmeContent, license: licenseContent };
+        }
+
+        function generateCoverCanvas() {
+            const coverCanvas = document.createElement('canvas');
+            coverCanvas.width = 1200;
+            coverCanvas.height = 800;
+            const cCtx = coverCanvas.getContext('2d');
+            cCtx.imageSmoothingEnabled = false;
+
+            const bgColor = document.getElementById('cover-bg-color').value;
+            cCtx.fillStyle = bgColor;
+            cCtx.fillRect(0, 0, 1200, 800);
+
+            const title = document.getElementById('cover-title').value || "Pixel Art Kit";
+            cCtx.fillStyle = "#ffffff";
+            cCtx.font = "bold 44px sans-serif";
+            cCtx.textAlign = "center";
+            cCtx.fillText(title, 600, 90);
+
+            const prefix = document.getElementById('kit-prefix').value || "rpg";
+            cCtx.fillStyle = "#38bdf8";
+            cCtx.font = "20px sans-serif";
+            cCtx.fillText(`KIT: ${prefix.toUpperCase()}`, 600, 130);
+
+            if (batchItems.length > 0) {
+                const itemsToDisplay = batchItems.slice(0, 8);
+                const displayCols = Math.min(4, itemsToDisplay.length);
+                const displayRows = Math.ceil(itemsToDisplay.length / displayCols);
+                const scaleFactor = 6;
+                const gridResolution = parseInt(document.getElementById('pixel-size').value);
+                const itemDrawSize = gridResolution * scaleFactor;
+                const gap = 40;
+
+                const totalW = displayCols * itemDrawSize + (displayCols - 1) * gap;
+                const totalH = displayRows * itemDrawSize + (displayRows - 1) * gap;
+                const startX = (1200 - totalW) / 2;
+                const startY = 190 + (500 - totalH) / 2;
+
+                itemsToDisplay.forEach((item, index) => {
+                    const c = index % displayCols;
+                    const r = Math.floor(index / displayCols);
+                    const ix = startX + c * (itemDrawSize + gap);
+                    const iy = startY + r * (itemDrawSize + gap);
+
+                    cCtx.fillStyle = "rgba(30, 41, 59, 0.7)";
+                    cCtx.fillRect(ix - 10, iy - 10, itemDrawSize + 20, itemDrawSize + 35);
+                    cCtx.strokeStyle = "#475569";
+                    cCtx.lineWidth = 2;
+                    cCtx.strokeRect(ix - 10, iy - 10, itemDrawSize + 20, itemDrawSize + 35);
+
+                    cCtx.drawImage(item.canvas, 0, 0, 512, 512, ix, iy, itemDrawSize, itemDrawSize);
+
+                    cCtx.fillStyle = "#cbd5e1";
+                    cCtx.font = "14px sans-serif";
+                    cCtx.textAlign = "center";
+                    cCtx.fillText(item.name, ix + itemDrawSize / 2, iy + itemDrawSize + 20);
+                });
+            } else {
+                cCtx.fillStyle = "#94a3b8";
+                cCtx.font = "24px sans-serif";
+                cCtx.textAlign = "center";
+                cCtx.fillText("Nenhum item carregado no lote", 600, 400);
+            }
+
+            const watermark = document.getElementById('kit-author').value || "Drielly Santiago dos Santos";
+            cCtx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            cCtx.font = "16px sans-serif";
+            cCtx.textAlign = "right";
+            cCtx.fillText(`Criado por ${watermark}`, 1160, 765);
+
+            return coverCanvas;
+        }
+
+        function downloadCoverArt() {
+            const coverCanvas = generateCoverCanvas();
+            const prefix = sanitizeText(document.getElementById('kit-prefix').value);
+            const filename = `${prefix}_capa_apresentacao.png`;
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = coverCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Funções de ZIP em JS puro com CRC32
+        const crcTable = (() => {
+            let c;
+            let table = [];
+            for (let n = 0; n < 256; n++) {
+                c = n;
+                for (let k = 0; k < 8; k++) {
+                    c = ((c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1));
+                }
+                table[n] = c;
+            }
+            return table;
+        })();
+
+        function calculateCRC32(uint8Array) {
+            let crc = 0 ^ (-1);
+            for (let i = 0; i < uint8Array.length; i++) {
+                crc = (crc >>> 8) ^ crcTable[(crc ^ uint8Array[i]) & 0xff];
+            }
+            return (crc ^ (-1)) >>> 0;
+        }
+
+        function strToUint8(str) {
+            let arr = new Uint8Array(str.length);
+            for (let i = 0; i < str.length; i++) {
+                arr[i] = str.charCodeAt(i) & 0xff;
+            }
+            return arr;
+        }
+
+        function generateZip(files) {
+            let localHeaders = [];
+            let centralDirectory = [];
+            let offset = 0;
+
+            files.forEach(file => {
+                let nameBytes = strToUint8(file.path);
+                let crc = calculateCRC32(file.data);
+                let size = file.data.length;
+
+                let header = new Uint8Array(30 + nameBytes.length);
+                let view = new DataView(header.buffer);
+
+                view.setUint32(0, 0x04034b50, true);
+                view.setUint16(4, 20, true);
+                view.setUint16(6, 0, true);
+                view.setUint16(8, 0, true);
+                view.setUint16(10, 0, true);
+                view.setUint16(12, 0, true);
+                view.setUint32(14, crc, true);
+                view.setUint32(18, size, true);
+                view.setUint32(22, size, true);
+                view.setUint16(26, nameBytes.length, true);
+                view.setUint16(28, 0, true);
+                header.set(nameBytes, 30);
+
+                localHeaders.push({ header, data: file.data, offset });
+                
+                let cdHeader = new Uint8Array(46 + nameBytes.length);
+                let cdView = new DataView(cdHeader.buffer);
+                cdView.setUint32(0, 0x02014b50, true);
+                cdView.setUint16(4, 20, true);
+                cdView.setUint16(6, 20, true);
+                cdView.setUint16(8, 0, true);
+                cdView.setUint16(10, 0, true);
+                cdView.setUint16(12, 0, true);
+                cdView.setUint16(14, 0, true);
+                cdView.setUint32(16, crc, true);
+                cdView.setUint32(20, size, true);
+                cdView.setUint32(24, size, true);
+                cdView.setUint16(28, nameBytes.length, true);
+                cdView.setUint16(30, 0, true);
+                cdView.setUint16(32, 0, true);
+                cdView.setUint16(34, 0, true);
+                cdView.setUint16(36, 0, true);
+                cdView.setUint32(38, 0, true);
+                cdView.setUint32(42, offset, true);
+                cdHeader.set(nameBytes, 46);
+
+                centralDirectory.push(cdHeader);
+                offset += header.length + size;
+            });
+
+            let cdOffset = offset;
+            let cdSize = centralDirectory.reduce((acc, curr) => acc + curr.length, 0);
+
+            let eocd = new Uint8Array(22);
+            let eocdView = new DataView(eocd.buffer);
+            eocdView.setUint32(0, 0x06054b50, true);
+            eocdView.setUint16(4, 0, true);
+            eocdView.setUint16(6, 0, true);
+            eocdView.setUint16(8, files.length, true);
+            eocdView.setUint16(10, files.length, true);
+            eocdView.setUint32(12, cdSize, true);
+            eocdView.setUint32(16, cdOffset, true);
+            eocdView.setUint16(20, 0, true);
+
+            let totalLength = offset + cdSize + eocd.length;
+            let result = new Uint8Array(totalLength);
+            let pos = 0;
+
+            localHeaders.forEach(item => {
+                result.set(item.header, pos);
+                pos += item.header.length;
+                result.set(item.data, pos);
+                pos += item.data.length;
+            });
+
+            centralDirectory.forEach(item => {
+                result.set(item, pos);
+                pos += item.length;
+            });
+
+            result.set(eocd, pos);
+
+            return new Blob([result], { type: 'application/zip' });
+        }
+
+        function dataURLToUint8Array(dataURL) {
+            let BASE64_MARKER = ';base64,';
+            let base64Index = dataURL.indexOf(BASE64_MARKER) + BASE64_MARKER.length;
+            let base64 = dataURL.substring(base64Index);
+            let raw = window.atob(base64);
+            let rawLength = raw.length;
+            let array = new Uint8Array(rawLength);
+            for(let i = 0; i < rawLength; i++) {
+                array[i] = raw.charCodeAt(i);
+            }
+            return array;
+        }
+
+        async function downloadKitZipInternal(includeDocs) {
+            if (batchItems.length === 0) {
+                alert("Carregue imagens para o lote primeiro!");
+                return;
+            }
+
+            const prefix = sanitizeText(document.getElementById('kit-prefix').value);
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            const scales = [1, 4, 8];
+            const filesToZip = [];
+            const pathListForReadme = [];
+
+            for (let i = 0; i < batchItems.length; i++) {
+                const item = batchItems[i];
+                const itemName = sanitizeText(item.name || `item_${i+1}`);
+                const itemNum = `item${String(i + 1).padStart(2, '0')}`;
+
+                for (const scale of scales) {
+                    const targetSize = gridResolution * scale;
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = targetSize;
+                    tempCanvas.height = targetSize;
+                    const tCtx = tempCanvas.getContext('2d');
+                    tCtx.imageSmoothingEnabled = false;
+                    tCtx.clearRect(0, 0, targetSize, targetSize);
+                    tCtx.drawImage(item.canvas, 0, 0, targetSize, targetSize);
+
+                    const dataUrl = tempCanvas.toDataURL('image/png');
+                    const uint8Data = dataURLToUint8Array(dataUrl);
+
+                    const dimStr = `${targetSize}x${targetSize}`;
+                    const fileName = `${prefix}_${itemNum}_${itemName}_${dimStr}.png`;
+                    const folderName = `png_${scale}x`;
+                    const fullPath = `${folderName}/${fileName}`;
+
+                    filesToZip.push({
+                        path: fullPath,
+                        data: uint8Data
+                    });
+                    pathListForReadme.push(fullPath);
+                }
+                await new Promise(r => setTimeout(r, 5));
+            }
+
+            const includeSpriteSheet = document.getElementById('include-spritesheet').checked;
+            if (includeSpriteSheet) {
+                const spriteSheetData = generateSpriteSheetData();
+                if (spriteSheetData) {
+                    const sheetPngData = dataURLToUint8Array(spriteSheetData.canvas.toDataURL('image/png'));
+                    filesToZip.push({
+                        path: `spritesheet/spritesheet.png`,
+                        data: sheetPngData
+                    });
+                    pathListForReadme.push("spritesheet/spritesheet.png");
+
+                    const jsonString = JSON.stringify(spriteSheetData.json, null, 2);
+                    filesToZip.push({
+                        path: `spritesheet/spritesheet.json`,
+                        data: strToUint8(jsonString)
+                    });
+                    pathListForReadme.push("spritesheet/spritesheet.json");
+                }
+            }
+
+            if (includeDocs) {
+                const docs = generateKitDocuments(pathListForReadme);
+                filesToZip.push({
+                    path: `LEIA-ME.txt`,
+                    data: strToUint8(docs.readme)
+                });
+                filesToZip.push({
+                    path: `LICENCA.txt`,
+                    data: strToUint8(docs.license)
+                });
+            }
+
+            const zipBlob = generateZip(filesToZip);
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(zipBlob);
+            link.download = `${prefix}_pixel_art_kit.zip`;
+            link.click();
+        }
+
+        function downloadKitZip() {
+            downloadKitZipInternal(false);
+        }
+
+        function downloadKitZipWithDocsButton() {
+            downloadKitZipInternal(true);
+        }
+
+        function downloadPixelArt() {
+            if (!currentImage) {
+                alert("Carregue ou tire uma foto primeiro!");
+                return;
+            }
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            const prefix = sanitizeText(document.getElementById('kit-prefix').value);
+            const itemName = sanitizeText(document.getElementById('item-name').value);
+            const dim = `${gridResolution}x${gridResolution}`;
+            const filename = `${prefix}_item01_${itemName}_${dim}.png`;
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function exportWithSize(multiplier) {
+            const gridResolution = parseInt(document.getElementById('pixel-size').value);
+            const targetSize = gridResolution * multiplier;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = targetSize;
+            tempCanvas.height = targetSize;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.imageSmoothingEnabled = false;
+            tCtx.clearRect(0, 0, targetSize, targetSize);
+            tCtx.drawImage(canvas, 0, 0, targetSize, targetSize);
+
+            const prefix = sanitizeText(document.getElementById('kit-prefix').value);
+            const itemName = sanitizeText(document.getElementById('item-name').value);
+            const dim = `${targetSize}x${targetSize}`;
+            const filename = `${prefix}_item01_${itemName}_${dim}.png`;
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function downloadSelectedSize() {
+            if (!currentImage) {
+                alert("Carregue ou tire uma foto primeiro!");
+                return;
+            }
+            const scale = parseInt(document.getElementById('export-scale').value);
+            exportWithSize(scale);
+        }
+
+        function downloadAllSizes() {
+            if (!currentImage) {
+                alert("Carregue ou tire uma foto primeiro!");
+                return;
+            }
+            const scales = [1, 4, 8, 16];
+            scales.forEach((scale, index) => {
+                setTimeout(() => {
+                    exportWithSize(scale);
+                }, index * 300);
+            });
+        }
+
+        toggleSketchOptions();
+        togglePaletteOptions();
+        toggleOutlineOptions();
+        toggleDitherOptions();
+        updatePresetDropdown();
+    </script>
+</body>
+</html>
